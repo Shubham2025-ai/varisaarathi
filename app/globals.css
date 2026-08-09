@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@theme {
+  --color-surface-base: #EFEBE1;
+  --color-accent-saffron: #E1600C;
+  --color-accent-indigo: #1B2A4A;
+  --color-sos-red: #C81E3A;
+  --color-risk-red: #C81E3A;
+  --color-risk-amber: #E8A93A;
+  --color-risk-green: #3C8248;
+}
+
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
