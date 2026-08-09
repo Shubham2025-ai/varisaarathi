@@ -21,50 +21,76 @@ const BADGE_COLOR: Record<string, string> = {
 
 export default function ScanPage() {
   const scannerRef = useRef<any>(null);
+  // Guards against the camera detecting the same QR across multiple frames
+  // and firing the success callback more than once before stop() finishes
+  // — without this, the second stop() call throws "Cannot stop, scanner is
+  // not running or paused", which was crashing the page.
+  const hasHandledScanRef = useRef(false);
+
   const [record, setRecord] = useState<WarkariRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(true);
 
   useEffect(() => {
     let html5QrCode: any;
+    let cancelled = false;
 
     async function startScanner() {
       const { Html5Qrcode } = await import("html5-qrcode");
       html5QrCode = new Html5Qrcode("qr-reader");
       scannerRef.current = html5QrCode;
+      hasHandledScanRef.current = false;
 
       try {
         await html5QrCode.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: 250 },
           async (decodedText: string) => {
-            await html5QrCode.stop();
-            setScanning(false);
-            lookupWarkari(decodedText);
+            if (hasHandledScanRef.current || cancelled) return;
+            hasHandledScanRef.current = true;
+
+            try {
+              await html5QrCode.stop();
+            } catch {
+              // Already stopped/stopping — safe to ignore, we only act once
+              // regardless, guarded by hasHandledScanRef above.
+            }
+
+            if (!cancelled) {
+              setScanning(false);
+              lookupWarkari(decodedText);
+            }
           },
-          () => {} // ignore per-frame scan failures
+          () => {} // ignore per-frame scan failures, expected while aiming
         );
       } catch (e) {
-        setError("Could not access camera. Check browser permissions.");
+        if (!cancelled) setError("Could not access camera. Check browser permissions.");
       }
     }
 
     if (scanning) startScanner();
 
     return () => {
-      html5QrCode?.stop().catch(() => {});
+      cancelled = true;
+      if (html5QrCode) {
+        html5QrCode.stop().catch(() => {});
+      }
     };
   }, [scanning]);
 
   async function lookupWarkari(qrCode: string) {
     setError(null);
-    const res = await fetch(`/api/warkari/${qrCode}`);
-    if (!res.ok) {
-      setError("QR not recognized, or you don't have access to view this record.");
-      return;
+    try {
+      const res = await fetch(`/api/warkari/${qrCode}`);
+      if (!res.ok) {
+        setError("QR not recognized, or you don't have access to view this record.");
+        return;
+      }
+      const json = await res.json();
+      setRecord(json.warkari);
+    } catch {
+      setError("Network error looking up this QR. Please try again.");
     }
-    const json = await res.json();
-    setRecord(json.warkari);
   }
 
   if (record) {
@@ -81,7 +107,7 @@ export default function ScanPage() {
           {record.dindi.name} · {record.gender} · {new Date(record.dob).toLocaleDateString()}
         </p>
         <p className="text-text-primary/70">Blood group: {record.bloodGroup ?? "unknown"}</p>
-        <div className="flex gap-2 text-sm">
+        <div className="flex gap-2 text-sm flex-wrap justify-center">
           {record.healthSummary.hypertension && <span className="px-2 py-1 rounded bg-risk-red/10 text-risk-red">Hypertension</span>}
           {record.healthSummary.diabetes && <span className="px-2 py-1 rounded bg-risk-red/10 text-risk-red">Diabetes</span>}
           {record.healthSummary.asthma && <span className="px-2 py-1 rounded bg-risk-red/10 text-risk-red">Asthma</span>}
@@ -102,7 +128,20 @@ export default function ScanPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-6 gap-4">
       <h1 className="font-display text-xl font-bold">Scan Warkari QR</h1>
-      {error && <p className="text-sos-red text-sm text-center">{error}</p>}
+      {error && (
+        <div className="text-center">
+          <p className="text-sos-red text-sm mb-2">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setScanning(true);
+            }}
+            className="text-sm underline text-accent-indigo"
+          >
+            Try again
+          </button>
+        </div>
+      )}
       <div id="qr-reader" className="w-full max-w-sm" />
     </main>
   );
