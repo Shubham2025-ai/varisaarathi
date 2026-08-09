@@ -32,7 +32,6 @@ export default function LoginPage() {
       return;
     }
 
-    // Fetch the session to read the role we just logged in as, then route accordingly.
     const sessionRes = await fetch("/api/auth/session");
     const session = await sessionRes.json();
     const role = session?.user?.role as string | undefined;
@@ -42,18 +41,21 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm flex flex-col gap-4">
-        <h1 className="font-display text-2xl font-bold text-center">Staff Login</h1>
+    <main className="min-h-screen flex items-center justify-center px-6 bg-surface-base">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm flex flex-col gap-4 bg-surface-raised border border-black/10 rounded-2xl p-6 shadow-sm">
+        <div className="text-center mb-1">
+          <h1 className="font-display text-2xl font-bold text-accent-saffron">Staff Login</h1>
+          <p className="font-body text-xs text-text-primary/50 mt-1">VariSaarathi staff portal</p>
+        </div>
 
-        {error && <p className="text-sos-red text-sm text-center">{error}</p>}
+        {error && <p className="text-sos-red text-sm text-center font-body">{error}</p>}
 
         <input
           type="text"
           placeholder="Phone (e.g. +919000000001)"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="border rounded-lg px-4 py-2"
+          className="border border-black/10 rounded-lg px-4 py-2.5 font-body text-sm focus:outline-none focus:ring-2 focus:ring-accent-saffron/40"
           required
         />
         <input
@@ -61,20 +63,20 @@ export default function LoginPage() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border rounded-lg px-4 py-2"
+          className="border border-black/10 rounded-lg px-4 py-2.5 font-body text-sm focus:outline-none focus:ring-2 focus:ring-accent-saffron/40"
           required
         />
         <button
           type="submit"
           disabled={loading}
-          className="bg-accent-saffron text-white rounded-lg py-2 font-semibold disabled:opacity-60"
+          className="bg-accent-saffron text-white rounded-lg py-2.5 font-body font-semibold disabled:opacity-60 transition-opacity"
         >
           {loading ? "Signing in…" : "Sign in"}
         </button>
 
-        <p className="text-xs text-center text-text-primary/50">
-          Demo: +919000000001 (Dispatcher), +919000000002 (Responder),<br />
-          +919000000004 (Admin), +919000000005 (Volunteer) — password: demo1234
+        <p className="font-mono text-[10px] leading-relaxed text-center text-text-primary/40 mt-2">
+          Demo: +919000000001 (Dispatcher) · +919000000002 (Responder)<br />
+          +919000000004 (Admin) · +919000000005 (Volunteer) — pw: demo1234
         </p>
       </form>
     </main>

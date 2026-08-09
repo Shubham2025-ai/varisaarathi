@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LanternBadge } from "@/components/lantern-badge";
 
 type WarkariRecord = {
   id: string;
@@ -13,12 +14,6 @@ type WarkariRecord = {
   dindi: { name: string };
 };
 
-const BADGE_COLOR: Record<string, string> = {
-  GREEN: "#3C8248",
-  AMBER: "#E8A93A",
-  RED: "#C81E3A",
-};
-
 export default function ScanPage() {
   const [record, setRecord] = useState<WarkariRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,14 +21,6 @@ export default function ScanPage() {
 
   useEffect(() => {
     let cancelled = false;
-    // Shared "is the scanner actually running" guard — checked/updated at
-    // BOTH call sites (the success callback and the unmount cleanup) so
-    // stop() is never called twice, regardless of which path gets there
-    // first. This is the actual fix: the previous version only guarded
-    // the callback, but the cleanup function could still call stop() a
-    // second time via .catch() chaining, which doesn't catch a SYNCHRONOUS
-    // throw from the library (only catches promise rejections) — hence
-    // the "Uncaught" error surviving the first fix attempt.
     let isRunning = false;
     let html5QrCode: any = null;
 
@@ -43,8 +30,7 @@ export default function ScanPage() {
       try {
         await html5QrCode.stop();
       } catch {
-        // Swallow — library sometimes throws even when we've correctly
-        // guarded against a real double-stop; never let this crash the page.
+        // Swallow — never let a stop() race crash the page.
       }
     }
 
@@ -64,7 +50,7 @@ export default function ScanPage() {
               lookupWarkari(decodedText);
             }
           },
-          () => {} // ignore per-frame scan failures, expected while aiming
+          () => {}
         );
         isRunning = true;
       } catch (e) {
@@ -97,29 +83,26 @@ export default function ScanPage() {
 
   if (record) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center px-6 gap-4 text-center">
-        <div
-          className="w-20 h-20 rounded-full flex items-center justify-center text-white font-bold"
-          style={{ backgroundColor: BADGE_COLOR[record.riskBadge] }}
-        >
-          {record.riskBadge}
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 gap-4 text-center bg-surface-base">
+        <div className="mb-1">
+          <LanternBadge level={record.riskBadge} showLabel size={22} />
         </div>
         <h1 className="font-display text-2xl font-bold">{record.name}</h1>
-        <p className="text-text-primary/70">
+        <p className="font-body text-text-primary/70">
           {record.dindi.name} · {record.gender} · {new Date(record.dob).toLocaleDateString()}
         </p>
-        <p className="text-text-primary/70">Blood group: {record.bloodGroup ?? "unknown"}</p>
-        <div className="flex gap-2 text-sm flex-wrap justify-center">
-          {record.healthSummary.hypertension && <span className="px-2 py-1 rounded bg-risk-red/10 text-risk-red">Hypertension</span>}
-          {record.healthSummary.diabetes && <span className="px-2 py-1 rounded bg-risk-red/10 text-risk-red">Diabetes</span>}
-          {record.healthSummary.asthma && <span className="px-2 py-1 rounded bg-risk-red/10 text-risk-red">Asthma</span>}
+        <p className="font-body text-text-primary/70">Blood group: {record.bloodGroup ?? "unknown"}</p>
+        <div className="flex gap-2 text-sm flex-wrap justify-center font-body">
+          {record.healthSummary.hypertension && <span className="px-2.5 py-1 rounded-full bg-risk-red/10 text-risk-red font-medium">Hypertension</span>}
+          {record.healthSummary.diabetes && <span className="px-2.5 py-1 rounded-full bg-risk-red/10 text-risk-red font-medium">Diabetes</span>}
+          {record.healthSummary.asthma && <span className="px-2.5 py-1 rounded-full bg-risk-red/10 text-risk-red font-medium">Asthma</span>}
         </div>
         <button
           onClick={() => {
             setRecord(null);
             setScanning(true);
           }}
-          className="mt-4 px-4 py-2 rounded-lg bg-accent-saffron text-white font-semibold"
+          className="mt-4 px-5 py-2.5 rounded-lg bg-accent-saffron text-white font-body font-semibold"
         >
           Scan Another
         </button>
@@ -128,23 +111,26 @@ export default function ScanPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-6 gap-4">
-      <h1 className="font-display text-xl font-bold">Scan Warkari QR</h1>
+    <main className="min-h-screen flex flex-col items-center justify-center px-6 gap-5 bg-surface-base">
+      <div className="text-center">
+        <h1 className="font-display text-xl font-bold text-accent-saffron">Scan Warkari QR</h1>
+        <p className="font-body text-xs text-text-primary/50 mt-1">Point camera at the pilgrim's ID card</p>
+      </div>
       {error && (
         <div className="text-center">
-          <p className="text-sos-red text-sm mb-2">{error}</p>
+          <p className="text-sos-red text-sm mb-2 font-body">{error}</p>
           <button
             onClick={() => {
               setError(null);
               setScanning(true);
             }}
-            className="text-sm underline text-accent-indigo"
+            className="text-sm underline text-accent-indigo font-body"
           >
             Try again
           </button>
         </div>
       )}
-      <div id="qr-reader" className="w-full max-w-sm" />
+      <div id="qr-reader" className="w-full max-w-sm rounded-xl overflow-hidden border border-black/10" />
     </main>
   );
 }

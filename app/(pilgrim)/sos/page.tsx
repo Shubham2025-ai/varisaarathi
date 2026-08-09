@@ -62,12 +62,12 @@ export default function SosPage() {
 
   if (alertId) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center px-6 text-center gap-4">
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 text-center gap-4 bg-surface-base">
         <div className="w-24 h-24 rounded-full bg-risk-green/15 flex items-center justify-center">
           <div className="w-14 h-14 rounded-full bg-risk-green" />
         </div>
         <h1 className="font-display text-2xl font-bold">Help is on the way</h1>
-        <p className="text-text-primary/70">मदत येत आहे</p>
+        <p className="font-body text-text-primary/70">मदत येत आहे</p>
         <p className="font-mono text-sm text-text-primary/50">
           Alert #{alertId.slice(0, 8)} — {status}
         </p>
@@ -76,15 +76,15 @@ export default function SosPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col px-6 py-8">
+    <main className="min-h-screen flex flex-col px-6 py-8 bg-surface-base">
       {advisory && !advisoryDismissed && (
-        <div className="bg-accent-indigo/10 border border-accent-indigo/20 rounded-xl p-3 mb-4 flex items-start justify-between gap-2">
+        <div className="bg-accent-indigo/8 border border-accent-indigo/20 rounded-xl p-3.5 mb-4 flex items-start justify-between gap-2">
           <div>
-            <p className="text-sm font-semibold text-accent-indigo">{advisory.routeSegment} — Heat Advisory</p>
-            <p className="text-sm text-text-primary/80 mt-0.5">{advisory.textEn}</p>
-            <p className="text-sm text-text-primary/60 mt-0.5">{advisory.textMr}</p>
+            <p className="font-body text-sm font-semibold text-accent-indigo">{advisory.routeSegment} — Heat Advisory</p>
+            <p className="font-body text-sm text-text-primary/80 mt-0.5">{advisory.textEn}</p>
+            <p className="font-body text-sm text-text-primary/60 mt-0.5">{advisory.textMr}</p>
           </div>
-          <button onClick={() => setAdvisoryDismissed(true)} className="text-text-primary/40 text-lg leading-none">
+          <button onClick={() => setAdvisoryDismissed(true)} className="text-text-primary/40 text-lg leading-none shrink-0">
             ×
           </button>
         </div>
@@ -93,7 +93,7 @@ export default function SosPage() {
       <div className="flex-1" />
 
       {error && (
-        <p className="text-sos-red text-sm text-center mb-4" role="alert">
+        <p className="text-sos-red text-sm text-center mb-4 font-body" role="alert">
           {error}
         </p>
       )}
@@ -109,7 +109,7 @@ export default function SosPage() {
           SOS
         </button>
 
-        <a href="/concern" className="text-sm font-body text-text-primary/60 underline underline-offset-2">
+        <a href="/concern" className="font-body text-sm text-text-primary/60 underline underline-offset-2">
           Raise a Concern (non-emergency)
         </a>
       </div>

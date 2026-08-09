@@ -34,25 +34,25 @@ export default function ResponderPage() {
 
   if (myCases.length === 0) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-text-primary/50 font-body">No active assignment.</p>
+      <main className="min-h-screen flex items-center justify-center bg-night-surface-base text-night-text-primary">
+        <p className="font-body text-night-text-primary/40">No active assignment.</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen px-6 py-8 flex flex-col gap-4 max-w-md mx-auto">
-      <h1 className="font-display text-xl font-bold">Assigned Cases</h1>
+    <main className="min-h-screen px-6 py-8 flex flex-col gap-4 max-w-md mx-auto bg-night-surface-base text-night-text-primary">
+      <h1 className="font-display text-xl font-bold text-night-accent-saffron">Assigned Cases</h1>
 
       {myCases.map((a) => (
-        <div key={a.id} className="rounded-xl border border-black/10 bg-surface-raised p-4 flex flex-col gap-2">
+        <div key={a.id} className="rounded-xl border border-white/10 bg-night-surface-raised p-4 flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="font-body font-semibold">{a.type}</span>
-            <span className="text-xs font-mono text-text-primary/50">{a.status}</span>
+            <span className="text-xs font-mono text-night-text-primary/40 uppercase">{a.status.replace("_", " ")}</span>
           </div>
 
           {a.warkari && (
-            <p className="text-sm text-text-primary/70">
+            <p className="font-body text-sm text-night-text-primary/70">
               {a.warkari.name} · Blood group: {a.warkari.bloodGroup ?? "unknown"} · Risk: {a.warkari.riskBadge}
             </p>
           )}
@@ -62,7 +62,7 @@ export default function ResponderPage() {
               href={`https://www.google.com/maps?q=${a.latitude},${a.longitude}`}
               target="_blank"
               rel="noreferrer"
-              className="text-sm text-accent-indigo underline"
+              className="font-body text-sm text-night-accent-saffron underline"
             >
               Open in Maps
             </a>
@@ -72,7 +72,7 @@ export default function ResponderPage() {
             {a.status === "RESPONDER_ASSIGNED" && (
               <button
                 onClick={() => updateStatus(a.id, "EN_ROUTE")}
-                className="flex-1 py-2 rounded-lg bg-accent-saffron text-white font-semibold text-sm"
+                className="flex-1 py-2 rounded-lg bg-night-accent-saffron text-night-surface-base font-body font-semibold text-sm"
               >
                 En Route
               </button>
@@ -80,7 +80,7 @@ export default function ResponderPage() {
             {a.status === "EN_ROUTE" && (
               <button
                 onClick={() => updateStatus(a.id, "RESOLVED")}
-                className="flex-1 py-2 rounded-lg bg-risk-green text-white font-semibold text-sm"
+                className="flex-1 py-2 rounded-lg bg-risk-green text-white font-body font-semibold text-sm"
               >
                 Resolved
               </button>
