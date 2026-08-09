@@ -20,42 +20,45 @@ const BADGE_COLOR: Record<string, string> = {
 };
 
 export default function ScanPage() {
-  const scannerRef = useRef<any>(null);
-  // Guards against the camera detecting the same QR across multiple frames
-  // and firing the success callback more than once before stop() finishes
-  // — without this, the second stop() call throws "Cannot stop, scanner is
-  // not running or paused", which was crashing the page.
-  const hasHandledScanRef = useRef(false);
-
   const [record, setRecord] = useState<WarkariRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(true);
 
   useEffect(() => {
-    let html5QrCode: any;
     let cancelled = false;
+    // Shared "is the scanner actually running" guard — checked/updated at
+    // BOTH call sites (the success callback and the unmount cleanup) so
+    // stop() is never called twice, regardless of which path gets there
+    // first. This is the actual fix: the previous version only guarded
+    // the callback, but the cleanup function could still call stop() a
+    // second time via .catch() chaining, which doesn't catch a SYNCHRONOUS
+    // throw from the library (only catches promise rejections) — hence
+    // the "Uncaught" error surviving the first fix attempt.
+    let isRunning = false;
+    let html5QrCode: any = null;
+
+    async function safeStop() {
+      if (!isRunning || !html5QrCode) return;
+      isRunning = false;
+      try {
+        await html5QrCode.stop();
+      } catch {
+        // Swallow — library sometimes throws even when we've correctly
+        // guarded against a real double-stop; never let this crash the page.
+      }
+    }
 
     async function startScanner() {
       const { Html5Qrcode } = await import("html5-qrcode");
       html5QrCode = new Html5Qrcode("qr-reader");
-      scannerRef.current = html5QrCode;
-      hasHandledScanRef.current = false;
 
       try {
         await html5QrCode.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: 250 },
           async (decodedText: string) => {
-            if (hasHandledScanRef.current || cancelled) return;
-            hasHandledScanRef.current = true;
-
-            try {
-              await html5QrCode.stop();
-            } catch {
-              // Already stopped/stopping — safe to ignore, we only act once
-              // regardless, guarded by hasHandledScanRef above.
-            }
-
+            if (cancelled) return;
+            await safeStop();
             if (!cancelled) {
               setScanning(false);
               lookupWarkari(decodedText);
@@ -63,6 +66,7 @@ export default function ScanPage() {
           },
           () => {} // ignore per-frame scan failures, expected while aiming
         );
+        isRunning = true;
       } catch (e) {
         if (!cancelled) setError("Could not access camera. Check browser permissions.");
       }
@@ -72,9 +76,7 @@ export default function ScanPage() {
 
     return () => {
       cancelled = true;
-      if (html5QrCode) {
-        html5QrCode.stop().catch(() => {});
-      }
+      safeStop();
     };
   }, [scanning]);
 
