@@ -75,10 +75,9 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts        Account[]
-  sessions        Session[]
-  warkariProfile  WarkariProfile?
-  respondedAlerts Alert[]          @relation("AssignedResponder")
+  accounts       Account[]
+  sessions       Session[]
+  warkariProfile WarkariProfile?
 
   @@index([role])
 }
@@ -178,9 +177,13 @@ model Alert {
   longitude      Float?
   locationSource String?
 
+  // NOTE: deliberately NOT a strict foreign key to User. Dispatch
+  // suggestions rank Camps (physical locations), but a "responder" in the
+  // full design is a person. Mapping camps to on-duty staff is out of
+  // scope for the hackathon MVP, so this just stores whichever id the
+  // dispatcher confirmed (camp or user) as plain text.
   aiSuggestion        Json?
   assignedResponderId String?
-  assignedResponder   User?   @relation("AssignedResponder", fields: [assignedResponderId], references: [id])
 
   createdAt      DateTime  @default(now())
   acknowledgedAt DateTime?
