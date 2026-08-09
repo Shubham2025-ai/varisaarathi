@@ -10,8 +10,7 @@ const bodySchema = z.object({ alertId: z.string() });
 // AI is advisory-only: it justifies the #1 rule-based pick in plain
 // language, it never re-ranks. If Groq is slow or unavailable, the
 // rule-based ranking is returned with a generic reason instead of blocking
-// the dispatcher — this fallback path is not optional, it's the whole
-// point of keeping ranking and justification as separate concerns.
+// the dispatcher.
 async function getGroqJustification(candidateName: string, distanceMeters: number, alertType: string): Promise<string | null> {
   if (!process.env.GROQ_API_KEY) return null;
 
@@ -39,7 +38,7 @@ async function getGroqJustification(candidateName: string, distanceMeters: numbe
     );
     return completion.choices[0]?.message?.content?.trim() ?? null;
   } catch {
-    return null; // timeout or API error — fall back silently, ranking still stands
+    return null;
   } finally {
     clearTimeout(timeout);
   }
@@ -60,15 +59,15 @@ export async function POST(req: NextRequest) {
 
   const camps = await prisma.camp.findMany({ where: { active: true } });
 
+  const busyAlerts: { assignedResponderId: string | null }[] = await prisma.alert.findMany({
+    where: { status: { in: ["RESPONDER_ASSIGNED", "EN_ROUTE"] } },
+    select: { assignedResponderId: true },
+  });
+
   const busyResponderIds = new Set(
-    (
-      await prisma.alert.findMany({
-        where: { status: { in: ["RESPONDER_ASSIGNED", "EN_ROUTE"] } },
-        select: { assignedResponderId: true },
-      })
-    )
-      .map((a) => a.assignedResponderId)
-      .filter(Boolean)
+    busyAlerts
+      .map((a: { assignedResponderId: string | null }) => a.assignedResponderId)
+      .filter((id: string | null): id is string => Boolean(id))
   );
 
   const candidates: Candidate[] = camps.map((c) => ({
